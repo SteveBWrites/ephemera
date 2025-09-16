@@ -1,74 +1,45 @@
-import { useState } from "react";
+// @ts-nocheck
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-export default function AddVinyl() {
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [label, setLabel] = useState("");
-  const [year, setYear] = useState("");
-  const [condition, setCondition] = useState("");
-  const [message, setMessage] = useState("");
+export default function Home() {
+  const [vinyls, setVinyls] = useState([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchVinyls = async () => {
+      const { data, error } = await supabase
+        .from("vinyl")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    const { error } = await supabase.from("vinyl").insert([
-      {
-        title,
-        artist,
-        label,
-        year: year ? parseInt(year) : null,
-        condition,
-      },
-    ]);
+      if (error) {
+        console.error(error);
+      } else {
+        setVinyls(data || []);
+      }
+    };
 
-    if (error) {
-      setMessage("❌ Error: " + error.message);
-    } else {
-      setMessage("✅ Saved! Go back to the home page to see it.");
-      setTitle("");
-      setArtist("");
-      setLabel("");
-      setYear("");
-      setCondition("");
-    }
-  };
+    fetchVinyls();
+  }, []);
 
   return (
     <main style={{ padding: 20 }}>
-      <h1>Add a Vinyl Record</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Title: </label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-        </div>
-        <div>
-          <label>Artist: </label>
-          <input value={artist} onChange={(e) => setArtist(e.target.value)} required />
-        </div>
-        <div>
-          <label>Label: </label>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} />
-        </div>
-        <div>
-          <label>Year: </label>
-          <input value={year} onChange={(e) => setYear(e.target.value)} type="number" />
-        </div>
-        <div>
-          <label>Condition: </label>
-          <select value={condition} onChange={(e) => setCondition(e.target.value)}>
-            <option value="">-- Choose --</option>
-            <option value="Mint">Mint</option>
-            <option value="Near Mint">Near Mint</option>
-            <option value="VG+">VG+</option>
-            <option value="VG">VG</option>
-            <option value="Good">Good</option>
-            <option value="Poor">Poor</option>
-          </select>
-        </div>
-        <button type="submit">Save</button>
-      </form>
-      <p>{message}</p>
+      <h1>🎶 Ephemera — Vinyl Collection</h1>
+      <p><a href="/add">Add a vinyl →</a></p>
+
+      {vinyls.length === 0 ? (
+        <p>No records yet.</p>
+      ) : (
+        <ul>
+          {vinyls.map((v) => (
+            <li key={v.id}>
+              <strong>{v.artist}</strong> — {v.title}{" "}
+              {v.year ? `(${v.year})` : ""}{" "}
+              {v.condition ? `[${v.condition}]` : ""}
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
